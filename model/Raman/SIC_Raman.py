@@ -8,6 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
+K = tc.set_backend("numpy")
+tc.set_dtype("complex128")
+
 def fibonacci(n):
     if not(type(n) == int) or n < 0:
         return
@@ -50,10 +53,10 @@ def gen_H_Raman_real_nambu(L, tso, Mz, beta, t0=1, phi=1):
     Ham[2 * (L - 1) + 1, 0] = tso
     Ham[1, 2 * (L - 1)] = - tso
 
-    Ham[0 + 2 * L + 1, 2 * (L - 1) + 2 * L + 1] = t0
-    Ham[1 + 2 * L + 1, 2 * (L - 1) + 1 + 2 * L + 1] = - t0
-    Ham[2 * (L - 1) + 1 + 2 * L + 1, 0 + 2 * L + 1] = tso
-    Ham[1 + 2 * L + 1, 2 * (L - 1) + 2 * L + 1] = - tso
+    Ham[0 + 2 * L + 1, 2 * (L - 1) + 2 * L + 1] = - t0
+    Ham[1 + 2 * L + 1, 2 * (L - 1) + 1 + 2 * L + 1] = t0
+    Ham[2 * (L - 1) + 1 + 2 * L + 1, 0 + 2 * L + 1] = - tso
+    Ham[1 + 2 * L + 1, 2 * (L - 1) + 2 * L + 1] = tso
 
     Ham += Ham.conj().T  # 加上H.c.
 
@@ -82,8 +85,8 @@ def cal_SIC_of_x(L, tso, Mz_array, beta, pre, steps, dt, t0=1, phi=1, site=None)
             
         H_evo = gen_H_Raman_real_nambu(L, tso, Mz, beta, t0, phi)
         system = tc.FGSSimulator(2 * L + 1, filled=filled_indices)
-        system.evol_ghamiltonian(2 * H_ent * np.pi / 4)
-        system.evol_ghamiltonian(2 * H_evo * pre)
+        system.evol_ghamiltonian(H_ent * np.pi / 4)
+        system.evol_ghamiltonian(H_evo * pre)
 
         random_array = np.random.rand(steps)
         for j in range(steps):
@@ -93,7 +96,7 @@ def cal_SIC_of_x(L, tso, Mz_array, beta, pre, steps, dt, t0=1, phi=1, site=None)
                 S_R = system.entropy([L])
                 S_ER = system.entropy(np.append(E_list, L))
                 SIC_array[i, j, x] = S_E + S_R - S_ER
-            system.evol_ghamiltonian(2 * H_evo * dt * random_array[j])
+            system.evol_ghamiltonian(H_evo * dt * random_array[j])
 
     file_name = f"SIC_of_x_{model_name}_L_{L}_tso_{tso:.1f}_Mz_{Mz_array[0]}_{Mz_array[-1]}_pre_{pre}_steps_{steps}_dt_{dt}"
     np.savez("data/" + file_name + ".npz", SIC_array=SIC_array)
@@ -123,14 +126,14 @@ def vis_SIC_of_x(L, tso, Mz_array, pre, steps, dt):
 if __name__ == "__main__":
     np.random.seed(123)
     state_name = "bipartite_state"
-    L = fibonacci(14)
+    L = fibonacci(12)  # F14
     tso = 0.3
     # Mz_array = np.concatenate((np.arange(0, 0.5, 0.25), np.arange(0.5, 1.5, 0.1), np.arange(1.5, 2.0+1e-3, 0.25)))
     Mz_array = np.arange(0, 4, 0.25)
-    beta = fibonacci(13) / fibonacci(14)
+    beta = fibonacci(11) / fibonacci(12)  # F14
     phi = np.pi/4
-    pre = 10000
-    steps = 10
+    pre = 1000  # 10000
+    steps = 5  # 10
     dt = 10
     
     import os
