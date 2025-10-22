@@ -22,7 +22,7 @@ def fibonacci(n):
 def vis_S_sat_and_vs(L, Mz_array, steps, dt):
     file_name = f"S_{model_name}_{state_name}_L_{L}_Mz_{Mz_array[0]}_{Mz_array[-1]}_steps_{steps}_dt_{dt}"
     data = np.load("data/" + file_name + ".npz")
-    S_array = data["S_array"] / L  # 看情况，entropy.py 里算的 S 忘记除以子系统长度 L 了。子系统长度是 L 是因为系统考虑了自旋，是 2L 长度的
+    S_array = data["S_array"]
 
     S_sat_array = np.zeros(len(Mz_array), dtype=np.complex128)
     vs_array = np.zeros(len(Mz_array), dtype=np.complex128)  # 记得指定数据类型
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     t0 = 1
     tso = 0.3
     # Mz_array = np.concatenate((np.arange(0, 0.5, 0.25), np.arange(0.5, 1.5, 0.1), np.arange(1.5, 2.0+1e-3, 0.25)))
-    Mz_array = np.arange(0, 4, 0.25)
+    Mz_array = np.arange(0, 4 + 0.001, 0.1)
     beta = fibonacci(11) / fibonacci(12)  #
     phi = 0
     steps = 250

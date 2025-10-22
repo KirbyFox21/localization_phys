@@ -56,7 +56,7 @@ def cal_S_of_t(L, tso, Mz_array, beta, steps, dt, t0=1, phi=0):
     if state_name == "bipartite_state":
         filled_indices = np.arange(0 , 2 * L // 2)
     elif state_name == "neel_state":
-        filled_indices = np.arange(0, 2 * L, 2)
+        filled_indices = np.arange(1, 2 * L, 2)
 
     for i, Mz in enumerate(Mz_array):
         print(f"Mz = {Mz:.2f} ({i + 1} / {len(Mz_array)})")
@@ -67,6 +67,7 @@ def cal_S_of_t(L, tso, Mz_array, beta, steps, dt, t0=1, phi=0):
             S_array[i, j] = system.entropy(sub_system)
             system.evol_ghamiltonian(H_evo * dt)
 
+    S_array /= len(sub_system)  # 记得除以子系统长度！！
     file_name = f"S_{model_name}_{state_name}_L_{L}_Mz_{Mz_array[0]}_{Mz_array[-1]}_steps_{steps}_dt_{dt}"
     np.savez("data/" + file_name + ".npz", S_array=S_array)
 
@@ -79,7 +80,7 @@ def vis_S_of_t(L, Mz_array, steps, dt):
     colors = plt.cm.viridis(np.linspace(0, 1, len(Mz_array)))
     plt.figure(figsize=(10, 6))
     for i, Mz in enumerate(Mz_array):
-        plt.plot(np.arange(1, steps+1e-3), S_array[i, :] / L, marker=".", linewidth=2, label=r"$M_z=%.2f$" % (Mz), color=colors[i])
+        plt.plot(np.arange(1, steps+1e-3), S_array[i, :], marker=".", linewidth=2, label=r"$M_z=%.2f$" % (Mz), color=colors[i])
     
     plt.title(rf"{state_name}, L={L}")
     plt.legend(loc='lower right')
@@ -97,7 +98,7 @@ if __name__ == "__main__":
     t0 = 1
     tso = 0.3
     # Mz_array = np.concatenate((np.arange(0, 0.5, 0.25), np.arange(0.5, 1.5, 0.1), np.arange(1.5, 2.0+1e-3, 0.25)))
-    Mz_array = np.arange(0, 4, 0.25)
+    Mz_array = np.arange(0, 4 + 0.001, 0.25)
     beta = fibonacci(11) / fibonacci(12)  #
     phi = 0
     steps = 250
