@@ -34,7 +34,7 @@ def gen_H_entangle_nambu(L, site=None):  # 这个哈密顿量用于建立参考�
     return H
 
 
-def gen_H_Raman_real_nambu(L, tso, Mz, beta, t0=1, phi=1):
+def gen_H_Raman_real_nambu(L, tso, Mz, beta, t0=1, phi=0):
     Ham = np.zeros((2 * 2 * L + 2, 2 * 2 * L + 2), dtype=np.complex128)
 
     for i in range(L - 1):
@@ -70,7 +70,7 @@ def gen_H_Raman_real_nambu(L, tso, Mz, beta, t0=1, phi=1):
     return Ham
 
 
-def cal_SIC_of_x(L, tso, Mz_array, beta, pre, steps, dt, t0=1, phi=1, site=None):
+def cal_SIC_of_x(L, tso, Mz_array, beta, pre, steps, dt, t0=1, phi=0, site=None):
     if site is None:
         site = 2 * L // 2  # site 的默认值与 L 有关，但是不允许直接这样定义，所以在函数体内设置
     H_ent = gen_H_entangle_nambu(L, site)
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     # Mz_array = np.concatenate((np.arange(0, 0.5, 0.25), np.arange(0.5, 1.5, 0.1), np.arange(1.5, 2.0+1e-3, 0.25)))
     Mz_array = np.arange(0, 4, 0.25)
     beta = fibonacci(11) / fibonacci(12)  # F14
-    phi = np.pi/4
+    phi = np.pi/4  # 注意这个相位也是准周期势能的，有什么用
     pre = 1000  # 10000
     steps = 5  # 10
     dt = 10
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     del os
 
     start_time = time.time()
-    cal_SIC_of_x(L, tso, Mz_array, beta, pre, steps, dt, t0=1, phi=1, site=None)
+    cal_SIC_of_x(L, tso, Mz_array, beta, pre, steps, dt, t0=1, phi=phi, site=None)
     vis_SIC_of_x(L, tso, Mz_array, pre, steps, dt)
     end_time = time.time()
     print(f"elapsed time: {end_time - start_time:.1f} s")

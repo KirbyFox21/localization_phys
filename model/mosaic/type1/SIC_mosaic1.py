@@ -1,4 +1,3 @@
-
 import sys
 # 获取Python版本号
 version = sys.version
@@ -22,7 +21,7 @@ def gen_H_entangle_nambu(L):  # 这个哈密顿量用于建立参考比特与第
 
     return H
 
-def gen_H_GAA_nambu(L, t, lbd, a, b, phi):  # 用 Nambu 哈密顿量是因为 tensorcircuit 的 fgs 使用了 Bogoliubov 变换。代入 c 和 Bogoliubov 变换的 alpha 的关系就能得到哈密顿量
+def gen_H_mosaic1_nambu(L, t, Mz, beta, phi):  # 用 Nambu 哈密顿量是因为 tensorcircuit 的 fgs 使用了 Bogoliubov 变换。代入 c 和 Bogoliubov 变换的 alpha 的关系就能得到哈密顿量
     H = np.zeros((2*L+2, 2*L+2), dtype=np.complex128)
 
     for i in range(L-1):
@@ -31,13 +30,13 @@ def gen_H_GAA_nambu(L, t, lbd, a, b, phi):  # 用 Nambu 哈密顿量是因为 te
         H[i+L+1, i+1+L+1] = -t / 2
         H[i+1+L+1, i+L+1] = -t / 2
 
-    for i in range(L):
-        H[i, i] = 2 * lbd * np.cos(2*np.pi*i*b+phi) / (1-a*np.cos(2*np.pi*i*b+phi)) / 2
+    for i in range(0, L, 2):
+        H[i, i] = 2 * Mz * np.cos(2*np.pi*i*beta+phi) / 2
         H[i+L+1, i+L+1] = -H[i, i]
 
     return H
 
-def cal_SIC_of_x(state_name, L, t, lbd_array, a, b, phi, pre, steps, dt, f):
+def cal_SIC_of_x(state_name, L, t, Mz_array, beta, phi, pre, steps, dt, f):
     H_ent = gen_H_entangle_nambu(L)
     filled_indices = np.arange(0 , L//f)
     # filled_indices = np.arange(L//f, L)
@@ -45,11 +44,11 @@ def cal_SIC_of_x(state_name, L, t, lbd_array, a, b, phi, pre, steps, dt, f):
         filled_indices = np.append(filled_indices, [L])
 
     if state_name == "bipartite_state":
-        SIC_array = np.zeros((len(lbd_array), steps, L//2))
-        for i, lbd in enumerate(lbd_array):
-            print(f"ldb = {lbd:.2f} ({i + 1} / {len(lbd_array)})")
+        SIC_array = np.zeros((len(Mz_array), steps, L//2))
+        for i, Mz in enumerate(Mz_array):
+            print(f"Mz = {Mz:.2f} ({i + 1} / {len(Mz_array)})")
             
-            H_evo = gen_H_GAA_nambu(L, t, lbd, a, b, phi)
+            H_evo = gen_H_mosaic1_nambu(L, t, Mz, beta, phi)
             system = tc.FGSSimulator(L+1, filled=filled_indices)
             system.evol_ghamiltonian(2 * H_ent * np.pi/4)
             system.evol_ghamiltonian(2 * H_evo * pre)
@@ -64,19 +63,19 @@ def cal_SIC_of_x(state_name, L, t, lbd_array, a, b, phi, pre, steps, dt, f):
                     SIC_array[i, j, x] = S_E + S_R - S_ER
                 system.evol_ghamiltonian(2 * H_evo * dt * random_array[j])
 
-    file_name = f"4 - SIC_of_x_{state_name}_f_{f}_L_{L}_a_{a:.1f}_lbd_{lbd_array[0]}_{lbd_array[-1]}_pre_{pre}_steps_{steps}_dt_{dt}"
-    np.savez("data//" + file_name + ".npz", SIC_array=SIC_array)
+    file_name = f"4 - SIC_of_x_{state_name}_f_{f}_L_{L}_Mz_{Mz_array[0]}_{Mz_array[-1]}_pre_{pre}_steps_{steps}_dt_{dt}"
+    np.savez("data/" + file_name + ".npz", SIC_array=SIC_array)
 
-def vis_SIC_of_x(state_name, L, lbd_array, a, pre, steps, dt, f):
-    file_name = f"4 - SIC_of_x_{state_name}_f_{f}_L_{L}_a_{a:.1f}_lbd_{lbd_array[0]}_{lbd_array[-1]}_pre_{pre}_steps_{steps}_dt_{dt}"
-    data = np.load("data//" + file_name + ".npz")
+def vis_SIC_of_x(state_name, L, Mz_array, pre, steps, dt, f):
+    file_name = f"4 - SIC_of_x_{state_name}_f_{f}_L_{L}_Mz_{Mz_array[0]}_{Mz_array[-1]}_pre_{pre}_steps_{steps}_dt_{dt}"
+    data = np.load("data/" + file_name + ".npz")
     SIC_array=data['SIC_array']
 
     plt.figure(figsize=(10, 6))
 
-    for lbd_idx, lbd in enumerate(lbd_array):
+    for Mz_idx, Mz in enumerate(Mz_array):
         if state_name == "bipartite_state":
-            plt.plot(range(L//2), np.mean(SIC_array[lbd_idx, :, :] / np.log(2), 0), marker='.', linewidth=2, label=rf"$\lambda={lbd:.2f}$")
+            plt.plot(range(L//2), np.mean(SIC_array[Mz_idx, :, :] / np.log(2), 0), marker='.', linewidth=2, label=rf"$\lambda={Mz:.2f}$")
             # mean(a, axis=())  # 表示对给定轴求平均值
             # 多维数组，给定其中一个指标，其他全是 : ，则新数组的尺寸为原数组尺寸删掉给定的那个轴
             # 例：a 的尺寸是 (2, 3, 4)，b = a [:, 1, :]，则 b 的尺寸是 (2, 4)
@@ -86,7 +85,7 @@ def vis_SIC_of_x(state_name, L, lbd_array, a, pre, steps, dt, f):
     plt.xlabel(r'$|A|=x$')
     plt.ylabel(r'$SIC$')
     plt.tight_layout()
-    plt.savefig("fig//" + file_name + ".png", dpi=300, bbox_inches="tight")
+    plt.savefig("fig/" + file_name + ".png", dpi=300, bbox_inches="tight")
     plt.show()
 
 if __name__ == "__main__":
@@ -95,9 +94,8 @@ if __name__ == "__main__":
     f = 2
     L = 300
     t = 1
-    lbd_array = np.concatenate((np.arange(0, 0.5, 0.25), np.arange(0.5, 1.5, 0.1), np.arange(1.5, 2.0+1e-3, 0.25)))
-    a = 0
-    b = 2 / (np.sqrt(5) - 1)
+    Mz_array = np.arange(0, 2.5 + 0.001, 0.25)
+    beta = (np.sqrt(5) - 1) / 2
     phi = np.pi/4
     pre = 10000
     steps = 10
@@ -111,7 +109,7 @@ if __name__ == "__main__":
     del os
 
     start_time = time.time()
-    cal_SIC_of_x(state_name, L, t, lbd_array, a, b, phi, pre, steps, dt, f)
-    vis_SIC_of_x(state_name, L, lbd_array, a, pre, steps, dt, f)
+    cal_SIC_of_x(state_name, L, t, Mz_array, beta, phi, pre, steps, dt, f)
+    vis_SIC_of_x(state_name, L, Mz_array, pre, steps, dt, f)
     end_time = time.time()
     print(f"elapsed time: {end_time - start_time:.1f} s")
