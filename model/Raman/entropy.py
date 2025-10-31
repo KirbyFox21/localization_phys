@@ -54,9 +54,9 @@ def cal_S_of_t(L, tso, Mz_array, beta, steps, dt, t0=1, phi=0):
     S_array = np.zeros((len(Mz_array), steps), dtype=np.complex128)
     sub_system = list(range(2 * L // 2))
     if state_name == "bipartite_state":
-        filled_indices = np.arange(0 , 2 * L // 2)
+        filled_indices = np.arange(1, 2 * L // 2, 2)  # 只填前一半的上自旋态
     elif state_name == "neel_state":
-        filled_indices = np.arange(1, 2 * L, 2)
+        filled_indices = np.arange(1, 2 * L, 4)  # 交错填充上自旋态，总的只填 L/2 个电子
 
     for i, Mz in enumerate(Mz_array):
         print(f"Mz = {Mz:.2f} ({i + 1} / {len(Mz_array)})")
@@ -93,7 +93,7 @@ def vis_S_of_t(L, Mz_array, steps, dt):
 
 if __name__ == "__main__":
     np.random.seed(123)
-    state_name = "neel_state"
+    state_name = "bipartite_state"
     L = fibonacci(12)  #
     t0 = 1
     tso = 0.3

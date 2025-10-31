@@ -29,8 +29,8 @@ def vis_S_sat_and_vs(L, Mz_array, steps, dt):
 
     for i, _ in enumerate(Mz_array):
         S_sat_array[i] = np.mean(S_array[i, 149:250])  # 数组切片也是包前不包后  #
-        x = np.arange(10)
-        coefficients = np.polyfit(x, S_array[i, 0:10], deg=1)  #
+        x = np.arange(5)
+        coefficients = np.polyfit(x, S_array[i, 0:5], deg=1)  #
         vs_array[i] = coefficients[0]
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     t0 = 1
     tso = 0.3
     # Mz_array = np.concatenate((np.arange(0, 0.5, 0.25), np.arange(0.5, 1.5, 0.1), np.arange(1.5, 2.0+1e-3, 0.25)))
-    Mz_array = np.arange(0, 4 + 0.001, 0.1)
+    Mz_array = np.arange(0, 4 + 0.001, 0.25)
     beta = fibonacci(11) / fibonacci(12)  #
     phi = 0
     steps = 250
