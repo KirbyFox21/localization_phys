@@ -42,12 +42,12 @@ def cal_S_of_t(L, t0, Mz_array, beta, EF, steps, dt, phi=0):
             system.evol_ghamiltonian(H_evo * dt)
 
     S_array /= len(sub_system)  # 记得除以子系统长度！！
-    file_name = f"S_{model_name}_{state_name}_L_{L}_Mz_{Mz_array[0]}_{Mz_array[-1]}_steps_{steps}_dt_{dt}"
+    file_name = f"S_{model_name}_{state_name}_L_{L}_EF_{EF}_Mz_{Mz_array[0]}_{Mz_array[-1]}_steps_{steps}_dt_{dt}"
     np.savez("data/" + file_name + ".npz", S_array=S_array)
 
 
 def vis_S_of_t(L, Mz_array, steps, dt):
-    file_name = f"S_{model_name}_{state_name}_L_{L}_Mz_{Mz_array[0]}_{Mz_array[-1]}_steps_{steps}_dt_{dt}"
+    file_name = f"S_{model_name}_{state_name}_L_{L}_EF_{EF}_Mz_{Mz_array[0]}_{Mz_array[-1]}_steps_{steps}_dt_{dt}"
     data = np.load("data/" + file_name + ".npz")
     S_array = data["S_array"]
 
@@ -68,15 +68,15 @@ def vis_S_of_t(L, Mz_array, steps, dt):
 if __name__ == "__main__":
     np.random.seed(123)
     state_name = "bipartite_state"
-    L = 300  #
+    L = 320  #
     t0 = 1
     # Mz_array = np.concatenate((np.arange(0, 0.5, 0.25), np.arange(0.5, 1.5, 0.1), np.arange(1.5, 2.0+1e-3, 0.25)))
-    Mz_array = np.arange(0, 2.5 + 0.001, 0.15)
+    Mz_array = np.arange(0.1, 2.5 + 0.001, 0.1)
     beta = (np.sqrt(5) - 1) / 2  #
     phi = 0
-    EF = L // 4
+    # EF = L // 4
     steps = 250
-    dt = 100
+    dt = 25  #
     
     import os
     if not os.path.exists('data'):
@@ -85,8 +85,10 @@ if __name__ == "__main__":
         os.mkdir('fig')
     del os
 
-    start_time = time.time()
-    cal_S_of_t(L, t0, Mz_array, beta, EF, steps, dt, phi)
-    vis_S_of_t(L, Mz_array, steps, dt)
-    end_time = time.time()
-    print(f"elapsed time: {end_time - start_time:.1f} s")
+    for i in range(1, 8):
+        EF = L // 8 * i
+        start_time = time.time()
+        cal_S_of_t(L, t0, Mz_array, beta, EF, steps, dt, phi)
+        vis_S_of_t(L, Mz_array, steps, dt)
+        end_time = time.time()
+        print(f"elapsed time: {end_time - start_time:.1f} s")
