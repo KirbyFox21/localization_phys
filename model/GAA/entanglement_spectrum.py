@@ -32,16 +32,16 @@ def gen_H_GAA_momentum(L, t0, lbd, a, beta, phi=0):
 if __name__ == "__main__":
     L = 320  #
     t0 = 1
-    lbd_array = np.arange(0.1, 2.5 + 0.001, 0.1)
+    lbd_array = np.arange(0.5, 1.5 + 0.001, 0.05)
     beta = (np.sqrt(5) - 1) / 2  #
     a = 0.3
     phi = 0
     # EF = L // 4
     steps = 250
-    dt = 25  #
+    dt = 25  # 可以适当调大
 
-    for i in range(1, 2):
-        EF = L // 8 * i
+    for k in range(1, 8):
+        EF = L // 8 * k
         start_time = time.time()
         H_0 = gen_H_GAA_momentum(L, t0, 0, a, beta, phi)
         e, Vr = np.linalg.eig(H_0)
@@ -56,15 +56,66 @@ if __name__ == "__main__":
                 xi = cal_entanglement_spectrum(init_state, H_evo, dt * j)
                 S_array[i, j] = cal_entanglement_entropy(xi)
                 xi_array [i, j, :] = xi
-            np.savez(f"lbd_{lbd}", S_array=S_array, xi_array=xi_array)
             print(f"lbd = {lbd} ({i + 1} / {len(lbd_array)})")
+        np.savez(f"EF_{EF}", S_array=S_array, xi_array=xi_array)
         
         colors = plt.cm.viridis(np.linspace(0, 1, len(lbd_array)))
         plt.figure(figsize=(10, 6))
         for i, lbd in enumerate(lbd_array):
             plt.plot(np.arange(1, steps+1e-3), S_array[i, :], marker=".", linewidth=2, label=r"$M_z=%.2f$" % (lbd), color=colors[i])
-        plt.savefig(f"lbd={lbd}")
+        plt.savefig(f"EF_{EF}")
 
         end_time = time.time()
-        print(f"i = {i}, elapsed time: {end_time - start_time:.1f} s")
+        print(f"k = {k}, elapsed time: {end_time - start_time:.1f} s")
+
+
+    for k in range(1, 8):
+        EF = L // 8 * k
+        file_name = f'EF_{EF}'
+        data = np.load(file_name + '.npz')
+        S_array = data['S_array']
+
+        S_sat_array = np.zeros(len(lbd_array), dtype=np.complex128)
+
+        for i, _ in enumerate(lbd_array):
+            S_sat_array[i] = np.mean(S_array[i, 149:250])  # 数组切片也是包前不包后  #
+
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+        ax1.plot(lbd_array, S_sat_array, linewidth=2, marker='.')
+        ax1.set_xlabel(r'$\lambda$')
+        ax1.set_ylabel(r'$S_{sat}$', color='tab:blue')
+        ax1.set_ylim([0, 0.45])
+        # ax1.set_ylim([0, 69])
+        ax1.tick_params(axis='y', labelcolor='tab:blue')
+
+        plt.savefig(file_name + '_S_sat.png', dpi=300, bbox_inches='tight')
+
+
+    # for k in range(1, 8):
+    #     EF = L // 8 * k
+    #     file_name = f'EF_{EF}'
+    #     data = np.load(file_name + '.npz')
+    #     xi_array = data['xi_array']
+        
+    #     gap_avg_array = np.zeros(len(lbd_array), dtype=np.complex128)
+    #     for i, _ in enumerate(lbd_array):
+    #         gap = np.zeros(steps, dtype=np.complex128)
+    #         for j in range(steps):
+    #             idx_up = xi_array[i, j, :] >= 0.5
+    #             min_up = np.min(xi_array[i, j, idx_up])
+    #             idx_dn = xi_array[i, j, :] <= 0.5
+    #             max_dn = np.max(xi_array[i, j, idx_dn])
+    #             gap[j] = min_up - max_dn
+    #         gap_avg_array[i] = np.mean(gap[149:250])
+
+    #     fig, ax1 = plt.subplots(figsize=(10, 6))
+    #     ax1.plot(lbd_array, gap_avg_array, linewidth=2, marker='.')
+    #     ax1.set_xlabel(r'$\lambda$')
+    #     ax1.set_ylabel(r'$\xi$', color='tab:green')
+    #     ax1.set_ylim(bottom=0)  #
+    #     # ax1.set_ylim([0, 69])
+    #     ax1.tick_params(axis='y', labelcolor='tab:green')
+        
+    #     plt.savefig(file_name + '_ES_gap_avg.png', dpi=300, bbox_inches='tight')
+    #     print(f"k = {k}")       
 
