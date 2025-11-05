@@ -32,63 +32,65 @@ def gen_H_GAA_momentum(L, t0, lbd, a, beta, phi=0):
 if __name__ == "__main__":
     L = 320  #
     t0 = 1
-    lbd_array = np.arange(0.5, 1.5 + 0.001, 0.05)
+    EF_array = np.arange(10, L, 20)
     beta = (np.sqrt(5) - 1) / 2  #
+    lbd_array = np.arange(0.8, 1.2 + 0.001, 0.1)
     a = 0.3
     phi = 0
-    # EF = L // 4
     steps = 250
     dt = 25  # 可以适当调大
 
-    for k in range(1, 8):
-        EF = L // 8 * k
+    H_0 = gen_H_GAA_momentum(L, t0, 0, a, beta, phi)
+    _, Vr = np.linalg.eig(H_0)
+
+    for k, lbd in enumerate(lbd_array):
         start_time = time.time()
-        H_0 = gen_H_GAA_momentum(L, t0, 0, a, beta, phi)
-        e, Vr = np.linalg.eig(H_0)
-        init_state = Vr[:, 0:EF]
+        H_evo = gen_H_GAA_momentum(L, t0, lbd, a, beta, phi)
+        S_array = np.zeros((len(EF_array), steps), dtype=np.complex128)
+        xi_array = np.zeros((len(EF_array), steps, L // 2), dtype=np.complex128)
 
-        S_array = np.zeros((len(lbd_array), steps), dtype=np.complex128)
-        xi_array = np.zeros((len(lbd_array), steps, L // 2), dtype=np.complex128)
-        for i, lbd in enumerate(lbd_array):
-            H_evo = gen_H_GAA_momentum(L, t0, lbd, a, beta, phi)
-
+        for i, EF in enumerate(EF_array):
+            init_state = Vr[:, 0:EF] 
             for j in range(steps):
                 xi = cal_entanglement_spectrum(init_state, H_evo, dt * j)
                 S_array[i, j] = cal_entanglement_entropy(xi)
                 xi_array [i, j, :] = xi
-            print(f"lbd = {lbd} ({i + 1} / {len(lbd_array)})")
-        np.savez(f"EF_{EF}", S_array=S_array, xi_array=xi_array)
+            print(f"EF = {EF} ({i + 1} / {len(EF_array)})")
+        np.savez('data/' + f'lbd_{lbd:.2f}', S_array=S_array, xi_array=xi_array)
         
-        colors = plt.cm.viridis(np.linspace(0, 1, len(lbd_array)))
+        colors = plt.cm.viridis(np.linspace(0, 1, len(EF_array)))
         plt.figure(figsize=(10, 6))
-        for i, lbd in enumerate(lbd_array):
-            plt.plot(np.arange(1, steps+1e-3), S_array[i, :], marker=".", linewidth=2, label=r"$M_z=%.2f$" % (lbd), color=colors[i])
-        plt.savefig(f"EF_{EF}")
+        for i, EF in enumerate(EF_array):
+            plt.plot(np.arange(1, steps+1e-3), S_array[i, :], marker=".", linewidth=2, label=r"$EF=%.2f$" % (EF), color=colors[i])
+        plt.title(rf"GAA, L={L}, $\lambda$={lbd}")
+        plt.legend(loc='lower right')
+        plt.xlabel(rf"$steps/{dt}$")
+        plt.ylabel(r"$S/L$")
+        plt.tight_layout()
+        plt.savefig('fig/' + f'lbd_{lbd:.2f}.png')
 
         end_time = time.time()
         print(f"k = {k}, elapsed time: {end_time - start_time:.1f} s")
 
 
-    for k in range(1, 8):
-        EF = L // 8 * k
-        file_name = f'EF_{EF}'
-        data = np.load(file_name + '.npz')
+    for k, lbd in enumerate(lbd_array):
+        file_name = f'lbd_{lbd:.2f}'
+        data = np.load('data/' + file_name + '.npz')
         S_array = data['S_array']
 
-        S_sat_array = np.zeros(len(lbd_array), dtype=np.complex128)
+        S_sat_array = np.zeros(len(EF_array), dtype=np.complex128)
 
-        for i, _ in enumerate(lbd_array):
+        for i, _ in enumerate(EF_array):
             S_sat_array[i] = np.mean(S_array[i, 149:250])  # 数组切片也是包前不包后  #
 
         fig, ax1 = plt.subplots(figsize=(10, 6))
-        ax1.plot(lbd_array, S_sat_array, linewidth=2, marker='.')
-        ax1.set_xlabel(r'$\lambda$')
+        ax1.plot(EF_array, S_sat_array, linewidth=2, marker='.')
+        ax1.set_xlabel(r'$E_F$')
         ax1.set_ylabel(r'$S_{sat}$', color='tab:blue')
-        ax1.set_ylim([0, 0.45])
-        # ax1.set_ylim([0, 69])
+        # ax1.set_ylim([0, 0.45])
         ax1.tick_params(axis='y', labelcolor='tab:blue')
 
-        plt.savefig(file_name + '_S_sat.png', dpi=300, bbox_inches='tight')
+        plt.savefig('fig/' + file_name + '_S_sat.png', dpi=300, bbox_inches='tight')
 
 
     # for k in range(1, 8):
