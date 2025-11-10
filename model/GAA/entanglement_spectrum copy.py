@@ -34,11 +34,12 @@ if __name__ == "__main__":
     t0 = 1
     EF_array = np.arange(10, L, 20)
     beta = (np.sqrt(5) - 1) / 2  #
-    lbd_array = np.arange(0.8, 1.2 + 0.001, 0.1)
+    # lbd_array = np.arange(0.8, 1.2 + 0.001, 0.1)
+    lbd_array = np.concatenate((np.arange(0.8, 1.2 + 0.001, 0.1), np.array([3.0])))  # np.concatenate((a, b)) 两层括号
     a = 0.3
     phi = 0
     steps = 250
-    dt = 25  # 可以适当调大
+    dt = 250  # 可以适当调大
 
     H_0 = gen_H_GAA_momentum(L, t0, 0, a, beta, phi)
     _, Vr = np.linalg.eigh(H_0)
@@ -50,7 +51,8 @@ if __name__ == "__main__":
         xi_array = np.zeros((len(EF_array), steps, L // 2), dtype=np.complex128)
 
         for i, EF in enumerate(EF_array):
-            init_state = Vr[:, (EF - 5):(EF + 6)] 
+            # init_state = Vr[:, EF - 1][:, np.newaxis]  # numpy 默认不区分行向量与列向量，如果需要明确是列向量，需要这样写
+            init_state = Vr[:, (EF - 5):(EF + 6)]
             for j in range(steps):
                 xi = cal_entanglement_spectrum(init_state, H_evo, dt * j)
                 S_array[i, j] = cal_entanglement_entropy(xi)
@@ -87,10 +89,10 @@ if __name__ == "__main__":
         ax1.plot(EF_array, S_sat_array, linewidth=2, marker='.')
         ax1.set_xlabel(r'$E_F$')
         ax1.set_ylabel(r'$S_{sat}$', color='tab:blue')
-        # ax1.set_ylim([0, 0.45])
+        # ax1.set_ylim([0.02, 0.05])
         ax1.tick_params(axis='y', labelcolor='tab:blue')
 
-        plt.savefig('fig/' + file_name + '_S_sat.png', dpi=300, bbox_inches='tight')
+        plt.savefig('fig/' + file_name + '_S_sat_Fixed.png', dpi=300, bbox_inches='tight')
 
 
     # for k in range(1, 8):
@@ -120,4 +122,3 @@ if __name__ == "__main__":
         
     #     plt.savefig(file_name + '_ES_gap_avg.png', dpi=300, bbox_inches='tight')
     #     print(f"k = {k}")       
-
