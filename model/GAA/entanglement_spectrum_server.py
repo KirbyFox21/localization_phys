@@ -3,6 +3,7 @@ from scipy.linalg import expm
 import matplotlib.pyplot as plt
 import time
 
+model_name = 'GAA'
 
 def cal_entanglement_spectrum(init_state, H_evo, dt):
     psi_t = expm( - 1j * H_evo * dt) @ init_state  # 别忘了 numpy 的矩阵乘法是 @
@@ -15,6 +16,27 @@ def cal_entanglement_entropy(xi):
     ee = np.sum( - xi * np.log(xi) - (1 - xi) * np.log(1 - xi)) / len(xi)  # 这里除以了子系统长度  # 一定要用 np.sum()，不要直接 sum
     # 另外 np.sum() 对 nan 值怎么处理，比如 log(0)
     return ee
+
+def vis_vs(L, lbd, EF_array, count=6):
+    file_name = f'lbd_{lbd:.2f}'
+    data = np.load("data/" + file_name + ".npz")
+    S_array = data["S_array"]
+
+    vs_array = np.zeros(len(EF_array), dtype=np.complex128)  # 记得指定数据类型
+    for i, _ in enumerate(EF_array):
+        x = np.arange(count - 1)
+        coefficients = np.polyfit(x, S_array[i, 1:count], deg=1)  #
+        vs_array[i] = coefficients[0]
+
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    ax1.set_title(rf"GAA, L={L}, $\lambda$={lbd}")
+    ax1.set_xlabel(r'$E_F$')
+    # ax1.set_ylim([0, 69])
+    ax1.plot(EF_array, vs_array, marker='x', markersize=5, color='tab:green')
+    ax1.set_ylabel(r'$v_s$', color='tab:green')
+    ax1.tick_params(axis='y', labelcolor='tab:green')
+    plt.tight_layout()
+    plt.savefig('fig/' + f'vs_lbd_{lbd:.2f}.png', dpi=300, bbox_inches='tight')
 
 
 def gen_H_GAA_momentum(L, t0, lbd, a, beta, phi=0):
@@ -39,7 +61,14 @@ if __name__ == "__main__":
     a = 0.3
     phi = 0
     steps = 250
-    dt = 250  # 可以适当调大
+    dt = 0.1  # 可以适当调大
+
+    # import os
+    # if not os.path.exists('data'):
+    #     os.mkdir('data')  # 创建文件夹
+    # if not os.path.exists('fig'):
+    #     os.mkdir('fig')
+    # del os
 
     H_0 = gen_H_GAA_momentum(L, t0, 0, a, beta, phi)
     _, Vr = np.linalg.eigh(H_0)
@@ -74,27 +103,32 @@ if __name__ == "__main__":
         end_time = time.time()
         print(f"k = {k}, elapsed time: {end_time - start_time:.1f} s")
 
-
-    for k, lbd in enumerate(lbd_array):
-        file_name = f'lbd_{lbd:.2f}'
-        data = np.load('data/' + file_name + '.npz')
-        S_array = data['S_array']
-
-        S_sat_array = np.zeros(len(EF_array), dtype=np.complex128)
-
-        for i, _ in enumerate(EF_array):
-            S_sat_array[i] = np.mean(S_array[i, 149:250])  # 数组切片也是包前不包后  #
-
-        fig, ax1 = plt.subplots(figsize=(10, 6))
-        ax1.plot(EF_array, S_sat_array, linewidth=2, marker='.')
-        ax1.set_xlabel(r'$E_F$')
-        ax1.set_ylabel(r'$S_{sat}$', color='tab:blue')
-        # ax1.set_ylim([0.02, 0.05])
-        ax1.tick_params(axis='y', labelcolor='tab:blue')
-
-        plt.savefig('fig/' + file_name + '_S_sat_Fixed.png', dpi=300, bbox_inches='tight')
+    for lbd in lbd_array:
+        vis_vs(L, lbd, EF_array, count=6)
 
 
+    # for k, lbd in enumerate(lbd_array):
+    #     file_name = f'lbd_{lbd:.2f}'
+    #     data = np.load('data/' + file_name + '.npz')
+    #     S_array = data['S_array']
+
+    #     S_sat_array = np.zeros(len(EF_array), dtype=np.complex128)
+
+    #     for i, _ in enumerate(EF_array):
+    #         S_sat_array[i] = np.mean(S_array[i, 149:250])  # 数组切片也是包前不包后  #
+
+    #     fig, ax1 = plt.subplots(figsize=(10, 6))
+    #     ax1.plot(EF_array, S_sat_array, linewidth=2, marker='.')
+    #     ax1.set_xlabel(r'$E_F$')
+    #     ax1.set_ylabel(r'$S_{sat}$', color='tab:blue')
+    #     # ax1.set_ylim([0.02, 0.05])
+    #     ax1.tick_params(axis='y', labelcolor='tab:blue')
+
+    #     plt.savefig('fig/' + file_name + '_S_sat.png', dpi=300, bbox_inches='tight')
+
+
+
+    # #####
     # for k in range(1, 8):
     #     EF = L // 8 * k
     #     file_name = f'EF_{EF}'
